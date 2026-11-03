@@ -14,7 +14,7 @@ test('GET /api/now liefert das Schema mit Cache-Header', async ({ request }) => 
 	expect(response.status()).toBe(200);
 	expect(response.headers()['cache-control']).toContain('max-age=60');
 	const body = await response.json();
-	expect(body.ampel).toBeNull();
+	expect(body.ampel.farbe).toBeNull();
 	expect(body).toHaveProperty('datenstand');
 });
 

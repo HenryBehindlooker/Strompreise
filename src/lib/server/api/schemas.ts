@@ -32,8 +32,14 @@ export const NowResponseSchema = z.object({
 		.nullable(),
 	/** Erneuerbaren-Anteil (Prognose) für das laufende Intervall, in Prozent. */
 	renewableSharePct: z.number().nullable(),
-	/** Ampelfarbe folgt mit der Score-Logik (Phase 4). Bis dahin immer null. */
-	ampel: z.null(),
+	/** Ampel für den aktuellen Zeitpunkt. farbe und symbol sind null bei fehlenden Daten. */
+	ampel: z.object({
+		farbe: z.enum(['gruen', 'gelb', 'rot']).nullable(),
+		symbol: z.enum(['✓', '!', '✕']).nullable(),
+		text: z.string(),
+		bisTs: unixSec.nullable(),
+		slotTs: unixSec.nullable()
+	}),
 	datenstand: z.record(z.string(), FreshnessSchema)
 });
 export type NowResponse = z.infer<typeof NowResponseSchema>;
@@ -67,7 +73,7 @@ export const WindowsResponseSchema = z.object({
 	generatedAt: unixSec,
 	durationSec: z.number().int().positive(),
 	count: z.number().int().positive(),
-	/** false, solange die Score-Logik (Phase 4) noch nicht angebunden ist. */
+	/** false, solange keine Preisdaten im Horizont vorliegen. */
 	ready: z.boolean(),
 	note: z.string().nullable(),
 	windows: z.array(WindowSchema)

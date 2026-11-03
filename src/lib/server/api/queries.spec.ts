@@ -82,7 +82,7 @@ describe('buildNow', () => {
 		expect(body.mix).toEqual({ ts: CURRENT, values: { solar: 1200, wind_onshore: 5000 } });
 		expect(body.price).toEqual({ ts: CURRENT, resolutionSec: SLOT, eurMwh: 87.5 });
 		expect(body.renewableSharePct).toBe(61);
-		expect(body.ampel).toBeNull();
+		expect(body.ampel).toMatchObject({ farbe: 'gelb', symbol: '!' });
 		expect(body.datenstand.generation).toMatchObject({ state: 'fresh', label: 'Daten frisch' });
 		expect(body.datenstand.prices).toMatchObject({ state: 'unknown' });
 	});
@@ -184,5 +184,54 @@ describe('Query-Parameter für /api/windows', () => {
 
 	it.each(['0', '11', 'abc'])('lehnt count "%s" ab', (count) => {
 		expect(WindowsQuerySchema.safeParse({ count }).success).toBe(false);
+	});
+});
+
+describe('Ampel und Zeitfenster aus der Datenbank', () => {
+	it('bewertet das laufende Intervall mit Preis und EE-Prognose', () => {
+		// Vier Intervalle ab CURRENT: billig mit viel EE, teuer mit wenig EE.
+		const starts = [0, 1, 2, 3].map((i) => CURRENT + i * SLOT);
+		upsertPrices(
+			opened.db,
+			starts.map((ts, i) => ({
+				ts,
+				resolutionSec: SLOT,
+				values: { [PRICE_KEY]: [10, 20, 90, 100][i]! }
+			}))
+		);
+		upsertRenewableShare(
+			opened.db,
+			starts.map((ts, i) => ({
+				ts,
+				resolutionSec: SLOT,
+				values: { [RENEWABLE_SHARE_KEY]: [90, 60, 10, 0][i]! }
+			})),
+			true
+		);
+
+		const body = NowResponseSchema.parse(buildNow(opened.db, NOW));
+		expect(body.ampel.farbe).toBe('gruen');
+		expect(body.ampel.slotTs).toBe(CURRENT);
+	});
+
+	it('liefert Zeitfenster ab "jetzt" und ist bereit, sobald Preise vorliegen', () => {
+		const starts = Array.from({ length: 16 }, (_, i) => CURRENT + i * SLOT);
+		upsertPrices(
+			opened.db,
+			starts.map((ts, i) => ({
+				ts,
+				resolutionSec: SLOT,
+				values: { [PRICE_KEY]: 50 + (i % 4) * 10 }
+			}))
+		);
+		const query = WindowsQuerySchema.parse({ duration: '1h', count: '2' });
+
+		const body = WindowsResponseSchema.parse(buildWindows(opened.db, NOW, query));
+
+		expect(body.ready).toBe(true);
+		expect(body.note).toBeNull();
+		expect(body.windows.length).toBeGreaterThan(0);
+		expect(body.windows.every((w) => w.from >= NOW)).toBe(true);
+		expect(body.windows.every((w) => w.to - w.from === 3600)).toBe(true);
 	});
 });

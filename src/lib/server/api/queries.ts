@@ -1,6 +1,14 @@
 import type { Db } from '../db/client';
 import { lastFetch, readGeneration, readPrices, readRenewableShare } from '../db/repo';
 import { HOUR_SEC } from '../logic/aggregate';
+import {
+	DEFAULT_AMPEL_CONFIG,
+	evaluateAmpel,
+	scoreSlots,
+	type AmpelConfig,
+	type Slot
+} from '../logic/ampel';
+import { findBestWindows } from '../logic/windows';
 import { JOB } from '../jobs/tasks';
 import { freshnessReport } from '../jobs/worker';
 import { PRICE_KEY, type NormalizedPoint } from '../sources/types';
@@ -11,6 +19,9 @@ import type {
 	WindowsQuery,
 	WindowsResponse
 } from './schemas';
+
+/** Horizont für Ampel und Zeitfenster. */
+export const HORIZON_SEC = 48 * HOUR_SEC;
 
 /* ---------- Reine Hilfsfunktionen ---------- */
 
@@ -40,24 +51,59 @@ export function latestAtOrBefore(
 	return best;
 }
 
+/**
+ * Bewertbare Intervalle ab dem laufenden Intervall bis `now + 48 h`.
+ * Jedes Intervall braucht einen Preis; die EE-Prognose wird über Überlappung zugeordnet.
+ * Intervalle ohne Preis werden nicht bewertet.
+ */
+export function loadSlots(db: Db, now: number): Slot[] {
+	const from = now - 2 * HOUR_SEC; // deckt ein laufendes Intervall mit längerer Dauer ab
+	const to = now + HORIZON_SEC;
+	const renewable = readRenewableShare(db, from, to, true);
+
+	return readPrices(db, from, to)
+		.filter((p) => p.ts + p.resolutionSec > now)
+		.map((p) => ({
+			ts: p.ts,
+			resolutionSec: p.resolutionSec,
+			priceEurMwh: p.values[PRICE_KEY] ?? null,
+			renewablePct: slotCovering(renewable, p.ts)?.values.pct ?? null
+		}));
+}
+
 const iso = (sec: number) => new Date(sec * 1000).toISOString();
 
 /* ---------- /api/now ---------- */
 
-export function buildNow(db: Db, now: number): NowResponse {
+export function buildNow(
+	db: Db,
+	now: number,
+	config: AmpelConfig = DEFAULT_AMPEL_CONFIG
+): NowResponse {
 	const mix = latestAtOrBefore(readGeneration(db, now - 3 * HOUR_SEC, now + 1), now);
 	const price = slotCovering(readPrices(db, now - 2 * HOUR_SEC, now + 1), now);
 	const renewable = slotCovering(readRenewableShare(db, now - 2 * HOUR_SEC, now + 1, true), now);
+	const ampel = evaluateAmpel(scoreSlots(loadSlots(db, now), config), now);
 
 	return {
 		generatedAt: now,
 		generatedAtIso: iso(now),
 		mix: mix ? { ts: mix.ts, values: mix.values } : null,
 		price: price
-			? { ts: price.ts, resolutionSec: price.resolutionSec, eurMwh: price.values[PRICE_KEY] ?? 0 }
+			? {
+					ts: price.ts,
+					resolutionSec: price.resolutionSec,
+					eurMwh: price.values[PRICE_KEY] ?? 0
+				}
 			: null,
 		renewableSharePct: renewable ? (renewable.values.pct ?? null) : null,
-		ampel: null,
+		ampel: {
+			farbe: ampel.farbe,
+			symbol: ampel.symbol,
+			text: ampel.text,
+			bisTs: ampel.bisTs,
+			slotTs: ampel.slotTs
+		},
 		datenstand: freshnessReport(db, now)
 	};
 }
@@ -67,7 +113,7 @@ export function buildNow(db: Db, now: number): NowResponse {
 /** Preise und EE-Prognose von der laufenden Auflösungseinheit bis `now + 48 h`. */
 export function buildForecast(db: Db, now: number): ForecastResponse {
 	const from = now - HOUR_SEC; // deckt auch ein laufendes Intervall ab
-	const to = now + 48 * HOUR_SEC;
+	const to = now + HORIZON_SEC;
 	const endsAfterNow = (p: NormalizedPoint) => p.ts + p.resolutionSec > now;
 
 	return {
@@ -76,7 +122,11 @@ export function buildForecast(db: Db, now: number): ForecastResponse {
 		to,
 		prices: readPrices(db, from, to)
 			.filter(endsAfterNow)
-			.map((p) => ({ ts: p.ts, resolutionSec: p.resolutionSec, eurMwh: p.values[PRICE_KEY] ?? 0 })),
+			.map((p) => ({
+				ts: p.ts,
+				resolutionSec: p.resolutionSec,
+				eurMwh: p.values[PRICE_KEY] ?? 0
+			})),
 		renewableForecast: readRenewableShare(db, from, to, true)
 			.filter(endsAfterNow)
 			.map((p) => ({ ts: p.ts, resolutionSec: p.resolutionSec, pct: p.values.pct ?? 0 }))
@@ -86,17 +136,28 @@ export function buildForecast(db: Db, now: number): ForecastResponse {
 /* ---------- /api/windows ---------- */
 
 /**
- * Platzhalter bis Phase 4: Die Score-Logik für Zeitfenster ist noch nicht
- * angebunden, daher gibt es keine Fenster und `ready` ist false.
+ * Beste Zeitfenster ab `now` im 48-Stunden-Horizont. Ohne Preisdaten ist `ready`
+ * false und die Liste leer.
  */
-export function buildWindows(_db: Db, now: number, query: WindowsQuery): WindowsResponse {
+export function buildWindows(
+	db: Db,
+	now: number,
+	query: WindowsQuery,
+	config: AmpelConfig = DEFAULT_AMPEL_CONFIG
+): WindowsResponse {
+	const scored = scoreSlots(loadSlots(db, now), config);
+	const ready = scored.some((s) => s.score !== null);
+	const windows = ready
+		? findBestWindows(scored, { durationSec: query.duration, count: query.count, notBefore: now })
+		: [];
+
 	return {
 		generatedAt: now,
 		durationSec: query.duration,
 		count: query.count,
-		ready: false,
-		note: 'Zeitfenster-Bewertung folgt mit der Ampel-Logik (Phase 4).',
-		windows: []
+		ready,
+		note: ready ? null : 'Noch keine Preisdaten für den Zeitraum vorhanden.',
+		windows
 	};
 }
 
