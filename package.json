@@ -46,6 +46,7 @@
 	"dependencies": {
 		"better-sqlite3": "^13.0.3",
 		"drizzle-orm": "^0.45.4",
-		"node-cron": "^4.6.0"
+		"node-cron": "^4.6.0",
+		"zod": "^4.6.7"
 	}
 }
