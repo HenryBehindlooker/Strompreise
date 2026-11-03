@@ -12,6 +12,12 @@ export interface NormalizedPoint {
 	values: Record<string, number>;
 }
 
+/** Schlüssel im `values`-Record für Preise (EUR/MWh, Gebotszone DE-LU). */
+export const PRICE_KEY = 'eur_mwh';
+
+/** Schlüssel im `values`-Record für den Erneuerbaren-Anteil (0–100 %). */
+export const RENEWABLE_SHARE_KEY = 'pct';
+
 /** Zeitfenster in Unix-Sekunden (UTC), `to` ist exklusiv. */
 export interface TimeRange {
 	from: number;
