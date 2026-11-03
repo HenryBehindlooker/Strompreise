@@ -1,0 +1,10 @@
+# Automatisches HTTPS über Let's Encrypt, sobald DOMAIN auf den Server zeigt.
+# Ohne DOMAIN (oder mit ":80") läuft Caddy nur über HTTP, z. B. zum lokalen Testen.
+{$DOMAIN:localhost} {
+	encode zstd gzip
+	reverse_proxy app:3000
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
