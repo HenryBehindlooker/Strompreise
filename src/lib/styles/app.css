@@ -1,0 +1,142 @@
+/*
+ * Design-Tokens. Werte der validierten Referenzpalette (dataviz):
+ * kategoriale Serien in fester Reihenfolge, Statusfarben modusunabhängig.
+ */
+
+:root {
+	color-scheme: light;
+
+	--bg: #f4f4f1;
+	--surface-1: #fcfcfb;
+	--text-primary: #0b0b0b;
+	--text-secondary: #52514e;
+	--text-muted: #6b6a66;
+	--border: #dcdbd6;
+	--grid: #e6e5e0;
+	--focus: #1c5cab;
+	--link: #1c5cab;
+
+	/* Kategoriale Serien (feste Reihenfolge, nie zyklisch) */
+	--series-1: #2a78d6;
+	--series-2: #eb6834;
+	--series-3: #1baf7a;
+	--series-4: #eda100;
+	--series-5: #e87ba4;
+	--series-6: #008300;
+	--series-7: #6250d6;
+	--series-8: #e34948;
+	--series-other: #8c8b86;
+
+	/* Status (fest, nicht themebar). Immer mit Symbol und Text kombinieren. */
+	--status-good: #0ca30c;
+	--status-warning: #fab219;
+	--status-critical: #d03b3b;
+	--status-on-good: #ffffff;
+	--status-on-warning: #0b0b0b;
+	--status-on-critical: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:where(:not([data-theme='light'])) {
+		color-scheme: dark;
+
+		--bg: #111110;
+		--surface-1: #1a1a19;
+		--text-primary: #f0efec;
+		--text-secondary: #c3c2b7;
+		--text-muted: #a3a296;
+		--border: #383835;
+		--grid: #2c2c2a;
+		--focus: #6aa6f0;
+		--link: #7ab8f5;
+
+		--series-1: #3987e5;
+		--series-2: #d95926;
+		--series-3: #199e70;
+		--series-4: #c98500;
+		--series-5: #d55181;
+		--series-6: #008300;
+		--series-7: #9085e9;
+		--series-8: #e66767;
+		--series-other: #7d7c76;
+	}
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+
+	--bg: #111110;
+	--surface-1: #1a1a19;
+	--text-primary: #f0efec;
+	--text-secondary: #c3c2b7;
+	--text-muted: #a3a296;
+	--border: #383835;
+	--grid: #2c2c2a;
+	--focus: #6aa6f0;
+	--link: #7ab8f5;
+
+	--series-1: #3987e5;
+	--series-2: #d95926;
+	--series-3: #199e70;
+	--series-4: #c98500;
+	--series-5: #d55181;
+	--series-6: #008300;
+	--series-7: #9085e9;
+	--series-8: #e66767;
+	--series-other: #7d7c76;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text-primary);
+	font-family:
+		system-ui,
+		-apple-system,
+		'Segoe UI',
+		Roboto,
+		'Helvetica Neue',
+		Arial,
+		sans-serif;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+a {
+	color: var(--link);
+}
+
+:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}

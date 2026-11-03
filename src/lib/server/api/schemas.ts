@@ -89,7 +89,8 @@ export const StatusResponseSchema = z.object({
 		z.object({
 			freshness: FreshnessSchema,
 			lastError: z.string().nullable(),
-			lastAttemptTs: unixSec.nullable()
+			lastAttemptTs: unixSec.nullable(),
+			lastOkTs: unixSec.nullable()
 		})
 	)
 });

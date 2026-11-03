@@ -1,7 +1,7 @@
-import { getDatabase } from '$lib/server/db';
-import { buildStatus } from '$lib/server/api/queries';
-import { StatusResponseSchema } from '$lib/server/api/schemas';
-import { apiError, apiJson, CACHE, nowSec } from '$lib/server/api/http';
+import { getDatabase } from '#lib/server/db';
+import { buildStatus } from '#lib/server/api/queries';
+import { StatusResponseSchema } from '#lib/server/api/schemas';
+import { apiError, apiJson, CACHE, nowSec } from '#lib/server/api/http';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = () => {

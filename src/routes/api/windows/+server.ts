@@ -1,8 +1,8 @@
-import { getDatabase } from '$lib/server/db';
-import { buildWindows } from '$lib/server/api/queries';
-import { WindowsQuerySchema, WindowsResponseSchema } from '$lib/server/api/schemas';
-import { apiError, apiJson, CACHE, nowSec } from '$lib/server/api/http';
-import { ampelConfigFromEnv } from '$lib/server/logic/ampel';
+import { getDatabase } from '#lib/server/db';
+import { buildWindows } from '#lib/server/api/queries';
+import { WindowsQuerySchema, WindowsResponseSchema } from '#lib/server/api/schemas';
+import { apiError, apiJson, CACHE, nowSec } from '#lib/server/api/http';
+import { ampelConfigFromEnv } from '#lib/server/logic/ampel';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url }) => {

@@ -1,5 +1,12 @@
 import type { Db } from '../db/client';
-import { lastFetch, readGeneration, readPrices, readRenewableShare } from '../db/repo';
+import {
+	lastFetch,
+	lastSuccessfulFetch,
+	readGeneration,
+	readPrices,
+	readRenewableShare
+} from '../db/repo';
+import { buildMixChartData, type MixChartData } from '../logic/mix';
 import { HOUR_SEC } from '../logic/aggregate';
 import {
 	DEFAULT_AMPEL_CONFIG,
@@ -171,8 +178,15 @@ export function buildStatus(db: Db, now: number): StatusResponse {
 		jobs[job] = {
 			freshness: freshness[job]!,
 			lastError: last && !last.ok ? (last.error ?? 'unbekannter Fehler') : null,
-			lastAttemptTs: last ? last.ts : null
+			lastAttemptTs: last ? last.ts : null,
+			lastOkTs: lastSuccessfulFetch(db, job)
 		};
 	}
 	return { generatedAt: now, jobs };
+}
+
+/* ---------- Diagramm: Strommix der letzten 24 Stunden ---------- */
+
+export function buildMixHistory(db: Db, now: number): MixChartData {
+	return buildMixChartData(readGeneration(db, now - 24 * HOUR_SEC, now + 1));
 }

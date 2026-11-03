@@ -4,8 +4,8 @@
 		"strict": true,
 		"types": ["$app/types", "node"],
 		"paths": {
-			"$lib": ["./src/lib"],
-			"$lib/*": ["./src/lib/*"]
+			"#lib": ["./src/lib/index.ts"],
+			"#lib/*": ["./src/lib/*"]
 		}
 	},
 	"include": [
