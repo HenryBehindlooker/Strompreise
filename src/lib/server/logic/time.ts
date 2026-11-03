@@ -76,3 +76,28 @@ export function berlinDayRange(nowSec: number, offsetDays = 0): DayRange {
 		to: berlinMidnight(y, m, d + 1)
 	};
 }
+
+/** Unix-Sekunden der vollen Stunde `hour` (Berliner Wanduhr) am Tag `dayOffset` relativ zu `nowSec`. */
+export function berlinTimeOnDay(nowSec: number, dayOffset: number, hour: number): number {
+	const day = berlinDayRange(nowSec, dayOffset);
+	let candidate = day.from + hour * 3600;
+	// An Umstelltagen stimmt die absolute Rechnung nicht; die Wanduhr gleicht den Fehler aus.
+	for (let i = 0; i < 2; i++) {
+		const wall = berlinWallHour(candidate * 1000);
+		if (wall === hour) break;
+		candidate += (hour - wall) * 3600;
+	}
+	return candidate;
+}
+
+function berlinWallHour(utcMs: number): number {
+	const parts = partsFormatter.formatToParts(new Date(utcMs));
+	return Number(parts.find((p) => p.type === 'hour')?.value) % 24;
+}
+
+/** Berliner Kalenderdatum als YYYY-MM-DD. */
+export function berlinDateKey(unixSec: number): string {
+	const { year, month, day } = berlinWallParts(unixSec * 1000);
+	const p = (n: number) => String(n).padStart(2, '0');
+	return `${year}-${p(month)}-${p(day)}`;
+}

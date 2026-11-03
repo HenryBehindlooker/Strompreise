@@ -54,3 +54,20 @@ export const fetchLog = sqliteTable(
 	},
 	(t) => [index('fetch_log_job_ok_ts').on(t.job, t.ok, t.ts)]
 );
+
+/** Web-Push-Abonnements. Nur Endpoint und Schlüssel; keine personenbezogenen Daten. */
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+	endpoint: text('endpoint').primaryKey(),
+	p256dh: text('p256dh').notNull(),
+	auth: text('auth').notNull(),
+	createdAt: integer('created_at')
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
+/** Protokoll versendeter Tagesbenachrichtigungen (Berliner Datum YYYY-MM-DD), damit pro Tag nur einmal gesendet wird. */
+export const pushSent = sqliteTable('push_sent', {
+	day: text('day').primaryKey(),
+	sentAt: integer('sent_at').notNull(),
+	recipients: integer('recipients').notNull()
+});

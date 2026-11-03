@@ -25,8 +25,14 @@ export const SCHEDULES = {
 	generation: '*/15 * * * *',
 	prices: '0 * * * *',
 	renewableForecast: '0 * * * *',
-	prune: '17 3 * * *'
+	prune: '17 3 * * *',
+	push: '0 18 * * *'
 } as const;
+
+/** Zusätzliche Jobs, die nur aktiv sind, wenn sie konfiguriert wurden (z. B. Web-Push). */
+export interface WorkerExtras {
+	pushJob?: () => unknown | Promise<unknown>;
+}
 
 export interface WorkerHandle {
 	stop(): void;
@@ -49,7 +55,7 @@ async function guard(name: string, fn: () => unknown | Promise<unknown>): Promis
  * (damit eine leere Datenbank schnell gefüllt wird) und danach nach Zeitplan.
  * `noOverlap` verhindert, dass sich Läufe desselben Jobs überschneiden.
  */
-export function startWorker(deps: JobDeps): WorkerHandle {
+export function startWorker(deps: JobDeps, extras: WorkerExtras = {}): WorkerHandle {
 	const tasks: ScheduledTask[] = [];
 
 	const register = (name: string, expression: string, fn: () => unknown) => {
@@ -66,6 +72,22 @@ export function startWorker(deps: JobDeps): WorkerHandle {
 			noOverlap: true
 		})
 	);
+
+	if (extras.pushJob) {
+		// Abends in Berlin, nachdem die Preise für den Folgetag vorliegen sollten.
+
+		const pushJob = extras.pushJob;
+
+		tasks.push(
+			cron.schedule(SCHEDULES.push, () => guard('push', pushJob), {
+				name: 'push',
+
+				timezone: 'Europe/Berlin',
+
+				noOverlap: true
+			})
+		);
+	}
 
 	return {
 		stop() {

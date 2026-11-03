@@ -130,3 +130,18 @@ export const WindowsQuerySchema = z.object({
 	count: z.coerce.number().int().min(1).max(10).default(3)
 });
 export type WindowsQuery = z.infer<typeof WindowsQuerySchema>;
+
+/* ---------- Web-Push ---------- */
+
+const pushEndpoint = z.url({ protocol: /^https$/ }).max(2048);
+
+export const PushSubscriptionSchema = z.object({
+	endpoint: pushEndpoint,
+	keys: z.object({
+		p256dh: z.string().min(1).max(200),
+		auth: z.string().min(1).max(200)
+	})
+});
+export type PushSubscriptionBody = z.infer<typeof PushSubscriptionSchema>;
+
+export const PushUnsubscribeSchema = z.object({ endpoint: pushEndpoint });

@@ -2,6 +2,7 @@
 	import type { PageProps } from './$types';
 	import AmpelHero from '#lib/components/AmpelHero.svelte';
 	import WindowList from '#lib/components/WindowList.svelte';
+	import PushToggle from '#lib/components/PushToggle.svelte';
 	import Figure from '#lib/components/Figure.svelte';
 	import UPlotChart, { type ChartSeries } from '#lib/components/UPlotChart.svelte';
 	import { de } from '#lib/i18n/de';
@@ -69,6 +70,8 @@
 		<p class="untertitel">{de.windows.subtitle}</p>
 		<WindowList windows={data.windows} note={data.windowsNote} />
 	</section>
+
+	<PushToggle />
 
 	<Figure
 		title={de.charts.price}

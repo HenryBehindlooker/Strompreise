@@ -30,6 +30,16 @@ export const de = {
 		value: 'Wert',
 		other: 'Sonstige'
 	},
+	push: {
+		title: 'Morgen-Hinweis',
+		text: 'Auf Wunsch eine Nachricht, wenn morgen zwischen 11 und 14 Uhr ein grünes Zeitfenster liegt.',
+		enable: 'Hinweis aktivieren',
+		disable: 'Hinweis ausschalten',
+		denied: 'Benachrichtigungen wurden im Browser nicht erlaubt.',
+		saved: 'Hinweis ist aktiv.',
+		removed: 'Hinweis ist ausgeschaltet.',
+		error: 'Das hat leider nicht geklappt. Bitte später noch einmal versuchen.'
+	},
 	footer: {
 		sources: 'Daten: Energy-Charts / Fraunhofer ISE (CC BY 4.0); Bundesnetzagentur | SMARD.de',
 		stand: 'Stand',
